@@ -110,6 +110,7 @@ class MobilLegendGame:
         pygame.display.set_caption("Mobil Legend — Khansa Racing Championship")
         
         self.screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
+        self.is_fullscreen = False
         self.clock = pygame.time.Clock()
         self.running = True
 
@@ -343,6 +344,13 @@ class MobilLegendGame:
                     self.start_new_game()
 
             elif event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_f and self.state != STATE_NAME_INPUT:
+                    self.is_fullscreen = not getattr(self, 'is_fullscreen', False)
+                    if self.is_fullscreen:
+                        self.screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT), pygame.FULLSCREEN | pygame.SCALED)
+                    else:
+                        self.screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
+
                 if self.state == STATE_NAME_INPUT:
                     if event.key == pygame.K_RETURN:
                         name = self.input_name_text.strip() or "Khansa"
@@ -698,8 +706,9 @@ class MobilLegendGame:
         if self.celebration_banner_timer > 0:
             self.celebration_banner_timer -= 1
             active_edu = self.vocab_manager if (self.edu_mode == EDU_MODE_VOCAB) else self.math_manager
-            if active_edu and active_edu.active_gate and active_edu.active_gate.y >= 20:
-                self.celebration_banner_timer = min(self.celebration_banner_timer, 15)
+            # Hanya memudarkan banner jika gerbang BARU yang belum diselesaikan mendekati mobil (y >= 280)
+            if active_edu and active_edu.active_gate and (not getattr(active_edu.active_gate, 'resolved', False)) and active_edu.active_gate.y >= 280:
+                self.celebration_banner_timer = min(self.celebration_banner_timer, 25)
 
         # Cek Game Over
         if self.player.hp <= 0:

@@ -30,6 +30,67 @@
       overflow: hidden;
       border: 2px solid #2a3147;
     }
+    #game-container:fullscreen,
+    #game-container:-webkit-full-screen,
+    #game-container:-moz-full-screen,
+    #game-container:-ms-fullscreen {
+      width: 100vw !important;
+      height: 100vh !important;
+      max-width: 100vw !important;
+      max-height: 100vh !important;
+      border-radius: 0 !important;
+      border: none !important;
+      display: flex !important;
+      align-items: center !important;
+      justify-content: center !important;
+      background: #090b10 !important;
+    }
+    #game-container:fullscreen canvas,
+    #game-container:-webkit-full-screen canvas,
+    #game-container:-moz-full-screen canvas,
+    #game-container:-ms-fullscreen canvas {
+      height: 100vh !important;
+      max-width: 100vw !important;
+      max-height: 100vh !important;
+      width: auto !important;
+      aspect-ratio: 800 / 650 !important;
+      object-fit: contain !important;
+      box-shadow: 0 0 50px rgba(0, 0, 0, 0.9) !important;
+    }
+    .top-controls {
+      position: absolute;
+      top: 8px;
+      right: 12px;
+      z-index: 30;
+      display: flex;
+      gap: 8px;
+    }
+    .fs-btn {
+      background: rgba(15, 23, 42, 0.88);
+      color: #00e5ff;
+      border: 1.5px solid #00e5ff;
+      border-radius: 8px;
+      padding: 6px 14px;
+      font-size: 12px;
+      font-weight: bold;
+      cursor: pointer;
+      backdrop-filter: blur(8px);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5), 0 0 10px rgba(0, 229, 255, 0.25);
+      transition: all 0.2s ease;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      touch-action: manipulation;
+    }
+    .fs-btn:hover {
+      background: #00e5ff;
+      color: #0d0f17;
+      box-shadow: 0 0 16px rgba(0, 229, 255, 0.8);
+      transform: translateY(-1px);
+    }
+    .fs-btn:active {
+      transform: scale(0.95);
+    }
     canvas {
       display: block;
       background: #2a303c;
@@ -93,6 +154,12 @@
 <body>
 
   <div id="game-container">
+    <div class="top-controls">
+      <button id="btn-fullscreen" class="fs-btn" onclick="toggleFullScreen()" title="Layar Penuh (Tekan F)">
+        <span id="fs-icon">⛶</span> <span id="fs-text">Layar Penuh</span>
+      </button>
+    </div>
+
     <canvas id="gameCanvas" width="800" height="650"></canvas>
     
     <div class="touch-controls">
@@ -109,7 +176,7 @@
   </div>
 
   <div class="info-bar">
-    <kbd>WASD</kbd> atau <kbd>Panah</kbd>: Menyetir & Gas &bull; <kbd>SPACE</kbd>: Turbo Nitro (Mobil) / Tembak Meriam (Tank) &bull; <kbd>G</kbd>: Pilih Mobil / Tank &bull; <kbd>P</kbd>: Pause
+    <kbd>WASD</kbd> / <kbd>Panah</kbd>: Setir &bull; <kbd>SPACE</kbd>: Nitro/Meriam &bull; <kbd>G</kbd>: Garasi &bull; <kbd>P</kbd>: Pause &bull; <kbd>F</kbd>: Layar Penuh (Fullscreen)
   </div>
 
 <script>
@@ -981,6 +1048,54 @@ window.addEventListener('keyup', e => {
 window.addEventListener('click', () => sfx.init());
 window.addEventListener('touchstart', () => sfx.init());
 
+// Fullscreen API Helper
+function toggleFullScreen() {
+  const container = document.getElementById('game-container');
+  const isFs = !!(document.fullscreenElement || document.webkitFullscreenElement || document.mozFullScreenElement || document.msFullscreenElement);
+
+  if (!isFs) {
+    if (container.requestFullscreen) {
+      container.requestFullscreen();
+    } else if (container.webkitRequestFullscreen) {
+      container.webkitRequestFullscreen();
+    } else if (container.mozRequestFullScreen) {
+      container.mozRequestFullScreen();
+    } else if (container.msRequestFullscreen) {
+      container.msRequestFullscreen();
+    }
+  } else {
+    if (document.exitFullscreen) {
+      document.exitFullscreen();
+    } else if (document.webkitExitFullscreen) {
+      document.webkitExitFullscreen();
+    } else if (document.mozCancelFullScreen) {
+      document.mozCancelFullScreen();
+    } else if (document.msExitFullscreen) {
+      document.msExitFullscreen();
+    }
+  }
+}
+
+function updateFullscreenUI() {
+  const isFs = !!(document.fullscreenElement || document.webkitFullscreenElement || document.mozFullScreenElement || document.msFullscreenElement);
+  const fsText = document.getElementById('fs-text');
+  const fsIcon = document.getElementById('fs-icon');
+  if (fsText && fsIcon) {
+    if (isFs) {
+      fsText.innerText = "Keluar Layar Penuh";
+      fsIcon.innerText = "✖";
+    } else {
+      fsText.innerText = "Layar Penuh";
+      fsIcon.innerText = "⛶";
+    }
+  }
+}
+
+document.addEventListener('fullscreenchange', updateFullscreenUI);
+document.addEventListener('webkitfullscreenchange', updateFullscreenUI);
+document.addEventListener('mozfullscreenchange', updateFullscreenUI);
+document.addEventListener('MSFullscreenChange', updateFullscreenUI);
+
 // Touch buttons handler
 function bindTouch(id, keyName) {
   const el = document.getElementById(id);
@@ -1132,6 +1247,10 @@ canvas.addEventListener('click', e => {
 });
 
 function handleKeyPress(k) {
+  if (state !== "NAME_INPUT" && (k.toLowerCase() === "f")) {
+    toggleFullScreen();
+    return;
+  }
   if (state === "NAME_INPUT") {
     if (k === "Enter") {
       playerName = inputNameText.trim() || "Khansa";
@@ -2120,8 +2239,10 @@ function update() {
   confettiParticles = confettiParticles.filter(cp => cp.life > 0);
   if (celebrationBannerTimer > 0) {
     celebrationBannerTimer--;
-    if ((vocabActiveGate && vocabActiveGate.y >= 20) || (mathActiveGate && mathActiveGate.y >= 20)) {
-      celebrationBannerTimer = Math.min(celebrationBannerTimer, 15);
+    const curGate = (eduMode === "VOCAB") ? vocabActiveGate : mathActiveGate;
+    // Hanya mulai memudarkan banner jika gerbang BARU yang belum diselesaikan mendekati pemain (y >= 280)
+    if (curGate && !curGate.resolved && curGate.y >= 280) {
+      celebrationBannerTimer = Math.min(celebrationBannerTimer, 25);
     }
   }
 
