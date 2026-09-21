@@ -551,7 +551,7 @@ class UIManager:
             pygame.draw.rect(surface, (255, 40, 40), (cx - hw + 2, cy + hh - 4, 5, 3), border_radius=1)
             pygame.draw.rect(surface, (255, 40, 40), (cx + hw - 7, cy + hh - 4, 5, 3), border_radius=1)
 
-    def draw_hud(self, surface, player, score, highscore, biome, math_manager=None, vocab_manager=None, edu_mode=EDU_MODE_MATH):
+    def draw_hud(self, surface, player, score, highscore, biome, math_manager=None, vocab_manager=None, edu_mode=EDU_MODE_MATH, celebration_active=False):
         # 1. Panel Atas (Skor, Koin, Jarak, Tipe)
         header_surf = pygame.Surface((SCREEN_WIDTH, 48), pygame.SRCALPHA)
         header_surf.fill((16, 20, 30, 220))
@@ -583,30 +583,31 @@ class UIManager:
         self.draw_text_with_shadow(surface, veh_tag, self.font_med, tag_col, (635, 14))
 
         # --- 2. BANNER EDUKASI (MATEMATIKA / KOSA KATA INGGRIS) DI ATAS JALUR ---
+        # Hanya tampil jika tidak sedang selebrasi agar tampilan rapi & tidak bertumpuk
         active_edu = vocab_manager if (edu_mode == EDU_MODE_VOCAB) else math_manager
-        if active_edu and active_edu.current_question:
+        if active_edu and active_edu.current_question and not celebration_active:
             q_text = active_edu.current_question.question_text
-            banner_w = 480
+            banner_w = 500
             banner_h = 36
-            bx = ROAD_LEFT - 10
+            bx = (SCREEN_WIDTH - banner_w) // 2
             by = 54
 
             b_surf = pygame.Surface((banner_w, banner_h), pygame.SRCALPHA)
-            pygame.draw.rect(b_surf, (15, 20, 34, 230), (0, 0, banner_w, banner_h), border_radius=8)
+            pygame.draw.rect(b_surf, (15, 20, 34, 240), (0, 0, banner_w, banner_h), border_radius=8)
             border_banner = COLOR_GOLD if (edu_mode == EDU_MODE_VOCAB) else (0, 235, 255)
             pygame.draw.rect(b_surf, border_banner, (0, 0, banner_w, banner_h), width=2, border_radius=8)
             surface.blit(b_surf, (bx, by))
 
-            # Icon & Teks Soal / Kosa Kata
+            # Icon & Teks Soal Bersih (Bebas dari petunjuk)
             if edu_mode == EDU_MODE_VOCAB:
-                m_cnt = len(getattr(vocab_manager, 'words_learned', set()))
+                src_word = getattr(active_edu.current_question, 'source_word', q_text)
                 is_incoming = getattr(vocab_manager, 'active_gate', None) is None
-                prefix = "🔔 GERBANG DI DEPAN: " if is_incoming else "🔤 "
-                q_label = f"{prefix}{q_text} 👉 PILIH GERBANG! (📚 {m_cnt}/3000)"
+                prefix = "🔔 SOAL BERIKUTNYA: " if is_incoming else "🔤 TANTANGAN: "
+                q_label = f"{prefix}Apa arti kata '{src_word}'?"
             else:
                 is_incoming = getattr(math_manager, 'active_gate', None) is None
-                prefix = "🔔 GERBANG DI DEPAN: " if is_incoming else "📐 SOAL: "
-                q_label = f"{prefix}{q_text} 👉 PILIH GERBANG JAWABAN!"
+                prefix = "🔔 SOAL BERIKUTNYA: " if is_incoming else "📐 SOAL: "
+                q_label = f"{prefix}{q_text} = ?"
             self.draw_text_with_shadow(surface, q_label, self.font_small, COLOR_WHITE, (bx + banner_w // 2, by + 18), center=True)
 
         # --- 3. POP-UP PUJIAN / FEEDBACK EDUKASI ---

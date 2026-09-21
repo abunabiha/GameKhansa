@@ -800,8 +800,12 @@ class MobilLegendGame:
             for cp in self.confetti_particles:
                 cp.draw(self.screen)
 
-            # 6. Gambar HUD (Termasuk Banner Soal & Feedback Edukasi)
-            self.ui.draw_hud(self.screen, self.player, self.score, self.highscore, biome, self.math_manager, self.vocab_manager, self.edu_mode)
+            # 6. Gambar HUD (Banner soal disembunyikan saat selebrasi agar rapi)
+            self.ui.draw_hud(
+                self.screen, self.player, self.score, self.highscore, biome,
+                self.math_manager, self.vocab_manager, self.edu_mode,
+                celebration_active=(self.celebration_banner_timer > 0)
+            )
 
             # 7. Gambar Banner Pop-up Hadiah Spesial jika aktif
             if self.celebration_banner_timer > 0:
@@ -818,7 +822,11 @@ class MobilLegendGame:
             for t_car in self.traffic_cars:
                 t_car.draw(self.screen)
             self.player.draw(self.screen)
-            self.ui.draw_hud(self.screen, self.player, self.score, self.highscore, biome, self.math_manager, self.vocab_manager, self.edu_mode)
+            self.ui.draw_hud(
+                self.screen, self.player, self.score, self.highscore, biome,
+                self.math_manager, self.vocab_manager, self.edu_mode,
+                celebration_active=False
+            )
             self.ui.draw_pause(self.screen)
 
         elif self.state == STATE_NAME_INPUT:
@@ -859,7 +867,7 @@ class MobilLegendGame:
         """Menampilkan banner perayaan dan kata motivasi dari tokoh-tokoh hebat dunia (Bilingual: ID & EN)."""
         banner_w, banner_h = 620, 114
         bx = (SCREEN_WIDTH - banner_w) // 2
-        by = SCREEN_HEIGHT // 2 - 148
+        by = 88
 
         surf = pygame.Surface((banner_w, banner_h), pygame.SRCALPHA)
         pygame.draw.rect(surf, (15, 20, 36, 245), (0, 0, banner_w, banner_h), border_radius=14)

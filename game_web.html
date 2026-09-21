@@ -2518,13 +2518,10 @@ function draw() {
     ctx.font = 'bold 12px sans-serif';
     ctx.textAlign = 'center';
     const gantryText = (eduMode === "VOCAB")
-      ? `🔤 ARTI KATA: "${activeGate.question.sourceWord.toUpperCase()}" 👉 PILIH JALUR TEPAT!`
-      : `📐 SOAL: ${activeGate.question.text.replace(' = ?', '')} = ? 👉 PILIH JAWABAN BENAR!`;
+      ? `🔤 ARTI KATA: "${activeGate.question.sourceWord.toUpperCase()}"`
+      : `📐 SOAL: ${activeGate.question.text.replace(' = ?', '')} = ?`;
     ctx.fillText(gantryText, 400, signY + 18);
     ctx.textAlign = 'left';
-
-    // Find correct answer lane index
-    const correctIdx = activeGate.question.options.indexOf(activeGate.question.correctAnswer);
 
     for (let i = 0; i < NUM_LANES; i++) {
       const cx = LANE_CENTERS[i];
@@ -2535,11 +2532,10 @@ function draw() {
       const py = gy - ph / 2;
 
       const isBlocked = activeGate.blockedLanes && activeGate.blockedLanes[i] > 0;
-      const isCorrect = (i === correctIdx);
 
       if (isBlocked) {
-        // ─── RED BLOCKED LANE ───
-        ctx.fillStyle = 'rgba(180, 20, 20, 0.88)';
+        // ─── RED BLOCKED LANE (Terbentur karena jawaban salah) ───
+        ctx.fillStyle = 'rgba(180, 20, 20, 0.90)';
         ctx.beginPath();
         ctx.roundRect(px, py, pw, ph, 8);
         ctx.fill();
@@ -2548,7 +2544,7 @@ function draw() {
         ctx.lineWidth = 3;
         ctx.stroke();
 
-        // Draw ⛔ X cross lines
+        // Garis silang laser perisai
         ctx.save();
         ctx.strokeStyle = 'rgba(255,255,255,0.85)';
         ctx.lineWidth = 4;
@@ -2567,55 +2563,15 @@ function draw() {
         ctx.fillText('⛔ SALAH', cx, py + ph + 14);
         ctx.textAlign = 'left';
 
-      } else if (isCorrect) {
-        // ─── GREEN CORRECT LANE (glowing) ───
-        ctx.save();
-        ctx.shadowColor = '#00ff88';
-        ctx.shadowBlur = 16 * pulse;
-        ctx.fillStyle = `rgba(0, ${Math.floor(100 + 80 * pulse)}, 60, 0.92)`;
-        ctx.beginPath();
-        ctx.roundRect(px, py, pw, ph, 8);
-        ctx.fill();
-        ctx.shadowBlur = 0;
-        ctx.restore();
-
-        ctx.strokeStyle = `rgba(0, 255, 136, ${0.7 + 0.3 * pulse})`;
-        ctx.lineWidth = 3;
-        ctx.beginPath();
-        ctx.roundRect(px, py, pw, ph, 8);
-        ctx.stroke();
-
-        // Sparkle dots along border
-        ctx.fillStyle = '#ffd700';
-        for (let d = 0; d < 4; d++) {
-          const angle = (gTick * 0.12 + d * Math.PI / 2);
-          const rx = cx + Math.cos(angle) * (pw / 2 - 4);
-          const ry = py + ph / 2 + Math.sin(angle) * (ph / 2 - 4);
-          ctx.beginPath();
-          ctx.arc(rx, ry, 3, 0, Math.PI * 2);
-          ctx.fill();
-        }
-
-        ctx.fillStyle = '#ffffff';
-        if (val.length > 12) {
-          ctx.font = 'bold 12px sans-serif';
-        } else if (val.length > 8) {
-          ctx.font = 'bold 15px sans-serif';
-        } else {
-          ctx.font = 'bold 19px sans-serif';
-        }
-        ctx.textAlign = 'center';
-        ctx.fillText(val, cx, py + 28);
-        ctx.textAlign = 'left';
-
       } else {
-        // ─── NEUTRAL LANE (cyan/yellow) ───
-        ctx.fillStyle = 'rgba(18, 25, 42, 0.92)';
+        // ─── PORTAL SERAGAM & NETRAL (TANPA PETUNJUK) ───
+        // Bebas petunjuk: Semua portal terlihat sama persis agar user berpikir & memilih sendiri
+        ctx.fillStyle = 'rgba(16, 24, 42, 0.94)';
         ctx.beginPath();
         ctx.roundRect(px, py, pw, ph, 8);
         ctx.fill();
 
-        ctx.strokeStyle = (i % 2 === 0) ? '#00e5ff' : '#fbbf24';
+        ctx.strokeStyle = '#00e5ff';
         ctx.lineWidth = 2.5;
         ctx.beginPath();
         ctx.roundRect(px, py, pw, ph, 8);
@@ -2627,7 +2583,7 @@ function draw() {
         } else if (val.length > 8) {
           ctx.font = 'bold 15px sans-serif';
         } else {
-          ctx.font = 'bold 19px sans-serif';
+          ctx.font = 'bold 18px sans-serif';
         }
         ctx.textAlign = 'center';
         ctx.fillText(val, cx, py + 28);
@@ -2706,20 +2662,15 @@ function draw() {
     ctx.fillText(`📚 ${masteredWords.size}/3000 KATA`, 530, 30);
   }
 
-  ctx.fillStyle = '#cfd8dc';
-  ctx.font = '13px sans-serif';
-  const bName = biome === "green" ? "Lembah Hijau" : (biome === "desert" ? "Gurun Senja" : "Cyber City");
-  ctx.fillText(`Peta: ${bName}`, 680, 30);
-
-  // Banner Soal Edukasi (Matematika atau Vocab)
+  // Banner Soal Edukasi (Hanya tampil jika tidak sedang selebrasi agar rapi & tidak bertumpuk)
   const curQ = (eduMode === "VOCAB") ? vocabCurrentQuestion : mathCurrentQuestion;
   const curGate = (eduMode === "VOCAB") ? vocabActiveGate : mathActiveGate;
-  if (curQ && (state === "PLAYING" || state === "PAUSED")) {
-    const bW = 540, bH = 36;
+  if (curQ && celebrationBannerTimer <= 0 && (state === "PLAYING" || state === "PAUSED")) {
+    const bW = 500, bH = 36;
     const bx = (800 - bW) / 2;
     const by = 54;
 
-    ctx.fillStyle = 'rgba(15, 20, 34, 0.92)';
+    ctx.fillStyle = 'rgba(15, 20, 34, 0.94)';
     ctx.beginPath();
     ctx.roundRect(bx, by, bW, bH, 8);
     ctx.fill();
@@ -2733,12 +2684,12 @@ function draw() {
     let bannerLabel = '';
     if (eduMode === "VOCAB") {
       const isApproaching = (curGate === null);
-      const prefix = isApproaching ? '🔔 GERBANG DI DEPAN: ' : '🔤 ';
-      bannerLabel = `${prefix}${curQ.text}   👉 PILIH GERBANG TEPAT! (📚 ${masteredWords.size}/3000)`;
+      const prefix = isApproaching ? '🔔 SOAL BERIKUTNYA: ' : '🔤 TANTANGAN: ';
+      bannerLabel = `${prefix}Apa arti "${curQ.sourceWord}"?`;
     } else {
       const isApproaching = (curGate === null);
-      const prefix = isApproaching ? '🔔 GERBANG DI DEPAN: SOAL ' : '📐 SOAL: ';
-      bannerLabel = `${prefix}${curQ.text}   👉 PILIH GERBANG!`;
+      const prefix = isApproaching ? '🔔 SOAL BERIKUTNYA: ' : '📐 SOAL: ';
+      bannerLabel = `${prefix}${curQ.text} = ?`;
     }
     ctx.fillText(bannerLabel, bx + bW / 2, by + 23);
     ctx.textAlign = 'left';
@@ -2750,7 +2701,7 @@ function draw() {
   const curFbColor = (eduMode === "VOCAB") ? vocabFeedbackColor : mathFeedbackColor;
 
   if (curFbTimer > 0 && (state === "PLAYING" || state === "PAUSED")) {
-    const fbW = 540, fbH = 38;
+    const fbW = 520, fbH = 36;
     const fx = (800 - fbW) / 2;
     const fy = 96;
 
@@ -2764,18 +2715,18 @@ function draw() {
 
     ctx.textAlign = 'center';
     ctx.fillStyle = curFbColor;
-    ctx.font = 'bold 15px sans-serif';
-    ctx.fillText(curFbText, 400, fy + 24);
+    ctx.font = 'bold 14px sans-serif';
+    ctx.fillText(curFbText, 400, fy + 23);
     ctx.textAlign = 'left';
   }
 
-  // 🎁 CELEBRATION BANNER — Super Reward Popup (4 Baris: Judul + Kutipan Tokoh Dunia ID & EN + Hadiah)
+  // 🎁 CELEBRATION BANNER — Super Reward Popup (Tampil Bersih di Tengah Layar)
   if (celebrationBannerTimer > 0 && (state === "PLAYING" || state === "PAUSED")) {
     const alpha = Math.min(1, celebrationBannerTimer / 20);
     const scale = celebrationBannerTimer > 320 ? 1.0 + 0.03 * Math.sin(celebrationBannerTimer * 0.3) : 1.0;
-    const bW = 660, bH = 118;
+    const bW = 660, bH = 114;
     const bx = (800 - bW) / 2;
-    const by = 120;
+    const by = 88;
 
     ctx.save();
     ctx.globalAlpha = alpha;

@@ -206,8 +206,8 @@ class MathGate:
         pygame.draw.rect(board_surf, (0, 230, 255), (0, 0, board_w, board_h), width=2, border_radius=6)
         surface.blit(board_surf, (board_x, board_y))
 
-        # Teks Soal di atas gerbang
-        q_label = f"📐 SOAL: {self.question.question_text} = ? 👉 PILIH JAWABAN BENAR!"
+        # Teks Soal di atas gerbang (Bersih & Rapi)
+        q_label = f"📐 SOAL: {self.question.question_text} = ?"
         q_surf = font.render(q_label, True, (0, 240, 255))
         q_rect = q_surf.get_rect(center=(SCREEN_WIDTH // 2, board_y + board_h // 2))
         surface.blit(q_surf, q_rect)
@@ -221,7 +221,6 @@ class MathGate:
             py = y_int - ph // 2
 
             is_blocked = (i in self.blocked_lanes and self.blocked_lanes[i] > 0)
-            is_correct_opt = (val == self.question.correct_answer)
 
             # Efek neon portal bercahaya
             gate_surf = pygame.Surface((pw, ph), pygame.SRCALPHA)
@@ -240,19 +239,10 @@ class MathGate:
                 w_rect = warn_surf.get_rect(center=(cx, y_int))
                 surface.blit(warn_surf, w_rect)
                 continue
-
-            elif is_correct_opt:
-                # Portal Hijau-Emas Berkilau Menarik untuk Jawaban Benar
-                glow_pulse = int(180 + 60 * math.sin(self.anim_tick * 0.15))
-                pygame.draw.rect(gate_surf, (20, 48, 30, 235), (0, 0, pw, ph), border_radius=10)
-                pygame.draw.rect(gate_surf, (50, 255, 120), (0, 0, pw, ph), width=3, border_radius=10)
-                # Lingkaran halo luar
-                pygame.draw.rect(gate_surf, (0, 255, 180, glow_pulse // 3), (0, 0, pw, ph), width=1, border_radius=10)
-                border_col = (50, 255, 120)
             else:
-                # Portal Netral
-                pygame.draw.rect(gate_surf, (18, 25, 42, 230), (0, 0, pw, ph), border_radius=10)
-                border_col = (0, 235, 255) if (i % 2 == 0) else (255, 190, 40)
+                # Portal Netral Seragam untuk Seluruh Lajur (Bebas Petunjuk - User Berpikir & Memilih Sendiri)
+                pygame.draw.rect(gate_surf, (18, 25, 42, 235), (0, 0, pw, ph), border_radius=10)
+                border_col = (0, 225, 255)
                 pygame.draw.rect(gate_surf, border_col, (0, 0, pw, ph), width=3, border_radius=10)
 
             surface.blit(gate_surf, (px, py))
