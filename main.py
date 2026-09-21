@@ -865,9 +865,9 @@ class MobilLegendGame:
 
     def _draw_celebration_banner(self):
         """Menampilkan banner perayaan dan kata motivasi dari tokoh-tokoh hebat dunia (Bilingual: ID & EN)."""
-        banner_w, banner_h = 620, 114
+        banner_w, banner_h = 680, 118
         bx = (SCREEN_WIDTH - banner_w) // 2
-        by = 88
+        by = 86
 
         surf = pygame.Surface((banner_w, banner_h), pygame.SRCALPHA)
         pygame.draw.rect(surf, (15, 20, 36, 245), (0, 0, banner_w, banner_h), border_radius=14)
@@ -879,7 +879,7 @@ class MobilLegendGame:
         m_cnt = len(getattr(self.vocab_manager, 'words_learned', set()))
         h_text = f"🎁 JAWABAN TEPAT! HEBAT, {p_name}! 🌟 (📚 {m_cnt}/3000 KATA)"
         t1 = self.ui.font_med.render(h_text, True, (255, 225, 50))
-        r1 = t1.get_rect(center=(SCREEN_WIDTH // 2, by + 18))
+        r1 = t1.get_rect(center=(SCREEN_WIDTH // 2, by + 20))
         self.screen.blit(t1, r1)
 
         # Baris 2 & 3: Kata Mutiara Tokoh Dunia (Indonesia & Inggris)
@@ -893,17 +893,27 @@ class MobilLegendGame:
             id_txt = f"💬 \"{motiv}\""
             en_txt = "🌟 Keep learning, keep shining!"
 
-        t2 = self.ui.font_tiny.render(id_txt, True, (80, 255, 140))
-        r2 = t2.get_rect(center=(SCREEN_WIDTH // 2, by + 44))
+        # Helper render yang otomatis mengecil jika teks lebih lebar dari banner
+        def render_fit(txt, font, color, max_w):
+            rendered = font.render(txt, True, color)
+            if rendered.get_width() > max_w:
+                scale_factor = max_w / rendered.get_width()
+                new_size = (int(rendered.get_width() * scale_factor), int(rendered.get_height() * scale_factor))
+                return pygame.transform.smoothscale(rendered, new_size)
+            return rendered
+
+        max_text_w = banner_w - 36
+        t2 = render_fit(id_txt, self.ui.font_tiny, (80, 255, 140), max_text_w)
+        r2 = t2.get_rect(center=(SCREEN_WIDTH // 2, by + 46))
         self.screen.blit(t2, r2)
 
-        t3 = self.ui.font_tiny.render(en_txt, True, (210, 235, 255))
-        r3 = t3.get_rect(center=(SCREEN_WIDTH // 2, by + 66))
+        t3 = render_fit(en_txt, self.ui.font_tiny, (210, 235, 255), max_text_w)
+        r3 = t3.get_rect(center=(SCREEN_WIDTH // 2, by + 68))
         self.screen.blit(t3, r3)
 
         # Baris 4: Hadiah yang didapatkan
         t4 = self.ui.font_tiny.render("🛡️ SHIELD BINTANG KEBAL + 💰 HUJAN 35 KOIN + ⚡ MEGA BOOST!", True, (0, 240, 255))
-        r4 = t4.get_rect(center=(SCREEN_WIDTH // 2, by + 90))
+        r4 = t4.get_rect(center=(SCREEN_WIDTH // 2, by + 94))
         self.screen.blit(t4, r4)
 
 

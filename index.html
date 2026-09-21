@@ -3,6 +3,9 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
   <title>Mobil Legend — Khansa Racing Championship</title>
   <style>
     * {
@@ -2744,13 +2747,13 @@ function draw() {
     ctx.textAlign = 'left';
   }
 
-  // 🎁 CELEBRATION BANNER — Super Reward Popup (Tampil Bersih di Tengah Layar)
+  // 🎁 CELEBRATION BANNER — Super Reward Popup (Tampil Bersih di Tengah Layar & Anti-Truncate)
   if (celebrationBannerTimer > 0 && (state === "PLAYING" || state === "PAUSED")) {
     const alpha = Math.min(1, celebrationBannerTimer / 20);
     const scale = celebrationBannerTimer > 320 ? 1.0 + 0.03 * Math.sin(celebrationBannerTimer * 0.3) : 1.0;
-    const bW = 660, bH = 114;
+    const bW = 700, bH = 120;
     const bx = (800 - bW) / 2;
-    const by = 88;
+    const by = 86;
 
     ctx.save();
     ctx.globalAlpha = alpha;
@@ -2782,30 +2785,44 @@ function draw() {
     ctx.roundRect(bx - 3, by - 3, bW + 6, bH + 6, 16);
     ctx.stroke();
 
+    // Helper fungsi perataan teks tengah presisi:
+    // Menggunakan textAlign='left' dengan x = (800 - w)/2 agar 100% imun dari WebKit/Safari emoji alignment bug
+    // Dilengkapi auto-scaling font agar kutipan panjang TIDAK AKAN PERNAH terpotong di tepi kanan!
+    function drawSafeCenteredText(text, y, font, color, maxW) {
+      ctx.save();
+      ctx.font = font;
+      let textW = ctx.measureText(text).width;
+      if (textW > maxW && textW > 0) {
+        const match = font.match(/(\d+(\.\d+)?)px/);
+        if (match) {
+          const currentSize = parseFloat(match[1]);
+          const newSize = Math.max(9.5, Math.floor(currentSize * (maxW / textW) * 10) / 10);
+          ctx.font = font.replace(match[0], `${newSize}px`);
+          textW = ctx.measureText(text).width;
+        }
+      }
+      const x = Math.round((800 - textW) / 2);
+      ctx.textAlign = 'left';
+      ctx.textBaseline = 'middle';
+      ctx.fillStyle = color;
+      ctx.fillText(text, x, y);
+      ctx.restore();
+    }
+
     // Line 1: Header Nama Pemain & Skor Kata Dikuasai
-    ctx.fillStyle = '#ffd700';
-    ctx.font = 'bold 17px sans-serif';
-    ctx.textAlign = 'center';
     const vocabBadge = (eduMode === "VOCAB" || masteredWords.size > 0) ? ` | 📚 ${masteredWords.size}/3000 KATA` : '';
-    ctx.fillText(`🎁 JAWABAN TEPAT! HEBAT, ${(playerName || 'KHANSA').toUpperCase()}!${vocabBadge} 🌟`, bx + bW / 2, by + 25);
+    drawSafeCenteredText(`🎁 JAWABAN TEPAT! HEBAT, ${(playerName || 'KHANSA').toUpperCase()}!${vocabBadge} 🌟`, by + 24, 'bold 16px sans-serif', '#ffd700', bW - 32);
 
     // Line 2: Kutipan Tokoh Dunia - Bahasa Indonesia
     const q = lastQuote || getRandomQuote();
-    ctx.fillStyle = '#4ade80';
-    ctx.font = 'bold 13px sans-serif';
-    ctx.fillText(`🇮🇩 "${q.id}"`, bx + bW / 2, by + 50);
+    drawSafeCenteredText(`🇮🇩 "${q.id}"`, by + 51, 'bold 12.5px sans-serif', '#4ade80', bW - 32);
 
     // Line 3: Kutipan Tokoh Dunia - Bahasa Inggris & Tokoh
-    ctx.fillStyle = '#67e8f9';
-    ctx.font = 'italic 12px sans-serif';
-    ctx.fillText(`🇬🇧 "${q.en}" — ${q.author}`, bx + bW / 2, by + 74);
+    drawSafeCenteredText(`🇬🇧 "${q.en}" — ${q.author}`, by + 75, 'italic 11.5px sans-serif', '#67e8f9', bW - 32);
 
     // Line 4: Detail Hadiah
-    ctx.fillStyle = '#fef08a';
-    ctx.font = 'bold 12px sans-serif';
-    ctx.fillText('🛡️ SHIELD KEBAL + 💰 35 KOIN + ❤️ +50 HP + ⚡ MEGA BOOST!', bx + bW / 2, by + 100);
+    drawSafeCenteredText('🛡️ SHIELD KEBAL + 💰 35 KOIN + ❤️ +50 HP + ⚡ MEGA BOOST!', by + 99, 'bold 11.5px sans-serif', '#fef08a', bW - 32);
 
-    ctx.textAlign = 'left';
     ctx.restore();
   }
 
