@@ -1,0 +1,118 @@
+name: CI/CD Pipeline - GameKhansa (Mobil Legend)
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+  workflow_dispatch:
+
+# Sets permissions of the GITHUB_TOKEN to allow deployment to GitHub Pages
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Allow only one concurrent deployment, skipping runs queued between the run in-progress and latest queued.
+concurrency:
+  group: "pages"
+  cancel-in-progress: false
+
+jobs:
+  # ==========================================
+  # JOB 1: CONTINUOUS INTEGRATION (CI)
+  # ==========================================
+  test:
+    name: Automated Testing (Python ${{ matrix.python-version }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.10", "3.11", "3.12"]
+
+    steps:
+      - name: 📥 Check out repository
+        uses: actions/checkout@v4
+
+      - name: 🐍 Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: 'pip'
+
+      - name: 📦 Install Linux SDL & Audio Dependencies for Headless Pygame
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            libsdl2-dev libsdl2-image-dev libsdl2-mixer-dev libsdl2-ttf-dev \
+            xvfb alsa-utils
+
+      - name: 📦 Install Python Dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: 🧪 Run Complete Test Suite (58 Test Cases)
+        env:
+          SDL_VIDEODRIVER: "dummy"
+          SDL_AUDIODRIVER: "dummy"
+        run: |
+          chmod +x run_tests.sh
+          ./run_tests.sh
+
+      - name: 🌐 Set up Node.js for Web Game Validation
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: 🔍 Validate JavaScript Syntax of HTML5 Web Game
+        run: |
+          node -e "
+          const fs = require('fs');
+          const vm = require('vm');
+          const html = fs.readFileSync('game_web.html', 'utf8');
+          const scriptMatches = [...html.matchAll(/<script[\s\S]*?>([\s\S]*?)<\/script>/gi)];
+          if (scriptMatches.length === 0) {
+            console.error('No script tags found in game_web.html');
+            process.exit(1);
+          }
+          scriptMatches.forEach((m, idx) => {
+            new vm.Script(m[1]);
+            console.log('✅ Script block ' + idx + ' syntax valid!');
+          });
+          console.log('🎉 HTML5 Canvas Web Game validated successfully!');
+          "
+
+  # ==========================================
+  # JOB 2: CONTINUOUS DEPLOYMENT (CD) - GITHUB PAGES
+  # ==========================================
+  deploy-pages:
+    name: Deploy Web Game to GitHub Pages
+    needs: test
+    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 📥 Check out repository
+        uses: actions/checkout@v4
+
+      - name: 📁 Prepare Artifacts for GitHub Pages
+        run: |
+          mkdir -p public
+          # Copy game_web.html as index.html so root URL immediately plays the game
+          cp game_web.html public/index.html
+          cp game_web.html public/game_web.html
+          cp -r docs public/docs
+          cp README.md public/README.md
+
+      - name: 📤 Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: 'public'
+
+      - name: 🚀 Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
